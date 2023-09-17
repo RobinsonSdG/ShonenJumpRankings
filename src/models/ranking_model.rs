@@ -6,7 +6,16 @@ pub struct Ranking {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub week: String,
-    pub ranking: Vec<String>,
+    pub ranking: Vec<Rank>,
+    pub cover: String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Rank {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub name: String,
+    pub chapter: i16
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -7,7 +7,7 @@ mod repository;
 
 //add imports below
 
-use api::ranking_api::{browse_and_add_rankings, get_ranking, get_rankings};
+use api::ranking_api::{browse_and_add_rankings, get_ranking, get_rankings, get_ranking_for_a_title};
 use repository::mongodb_repo::MongoRepo;
 
 use reqwest::Response;
@@ -27,6 +27,6 @@ fn rocket() -> _ {
         .manage(db)
         .mount("/", routes![browse_and_add_rankings])
         .mount("/", routes![get_ranking])
+        .mount("/", routes![get_ranking_for_a_title])
         .mount("/", routes![get_rankings])
-        // .mount("/", routes![get_rankings])
 }

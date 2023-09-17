@@ -45,6 +45,28 @@ impl MongoRepo {
         }
     }
 
+    pub fn get_ranking_for_a_title(&self, year: &i32, week: &String, title: &String) -> Result<String, &'static str> {
+        let filter = doc! {"year": year};
+        let mut ranking_result: Option<usize> = None;
+        let rankings = self
+            .col
+            .find_one(filter, None)
+            .ok()
+            .expect("Error getting ranking's detail").unwrap();
+        for ranking in rankings.rankings {
+            if &ranking.week == week {
+                match ranking.ranking.iter().position(|manga| &manga.name == title) {
+                    Some(m) => ranking_result = Some(m + 1),
+                    None => break
+                }
+            }
+        }
+        match ranking_result {
+            Some(r) => Ok(r.to_string()),
+            None => Err("no ranking for given parameters")
+        }
+    }
+
     pub fn create_rankings(&self, new_ranking: Rankings) -> Result<InsertOneResult, Error> {
         let new_doc = Rankings {
             id: None,
