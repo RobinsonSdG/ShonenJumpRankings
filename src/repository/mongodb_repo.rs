@@ -3,8 +3,8 @@ extern crate dotenv;
 use dotenv::dotenv;
 
 use mongodb::{
-    bson::{extjson::de::Error, oid::ObjectId, doc},
-    results::{ InsertOneResult},
+    bson::{extjson::de::Error, doc},
+    results::InsertOneResult,
     sync::{Client, Collection},
 };
 use crate::models::ranking_model::{Ranking, Rankings};
@@ -67,18 +67,15 @@ impl MongoRepo {
         }
     }
 
-    pub fn create_rankings(&self, new_ranking: Rankings) -> Result<InsertOneResult, Error> {
+    pub fn create_rankings(&self, new_ranking: Rankings) -> Result<InsertOneResult, mongodb::error::Error> {
         let new_doc = Rankings {
             id: None,
             year: new_ranking.year,
             rankings: new_ranking.rankings,
         };
-        let rankings = self
+        self
             .col
             .insert_one(new_doc, None)
-            .ok()
-            .expect("Error creating ranking");
-        Ok(rankings)
     }
 
     pub fn get_rankings(&self, year: &i32) -> Result<Rankings, Error> {

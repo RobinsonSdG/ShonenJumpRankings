@@ -10,16 +10,6 @@ mod repository;
 use api::ranking_api::{browse_and_add_rankings, get_ranking, get_rankings, get_ranking_for_a_title};
 use repository::mongodb_repo::MongoRepo;
 
-use reqwest::Response;
-
-use rocket::serde::json::Json;
-use rocket::serde::{Serialize, Deserialize};
-
-#[get("/")]
-fn hello() -> &'static str {
-    "Hello, world!"
-}
-
 #[launch]
 fn rocket() -> _ {
     let db = MongoRepo::init();

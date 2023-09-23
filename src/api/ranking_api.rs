@@ -53,7 +53,6 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
     let mut weeks = 1..53;
     while let Some(week) = weeks.next() {
         let mut week_string = week.to_string();
-        let mut cover: String = "".to_string();
 
         // let img_resp = get_img_resp().await;
 
@@ -97,12 +96,14 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
 
         let document = scraper::Html::parse_document(&body);
 
-        let figure_selector = scraper::Selector::parse("figure>a").unwrap();
+        let cover_figure_selector = scraper::Selector::parse("figure>a").unwrap();
         let li_selector = scraper::Selector::parse("ol>li").unwrap();
         let font_color_selector = scraper::Selector::parse("font").unwrap();
         let a_selector = scraper::Selector::parse("a").unwrap();
+        let color_page_figure_selector = scraper::Selector::parse("div>span>table>tbody>tr>td>a>img").unwrap();
 
-        for figure in document.select(&figure_selector) {
+        let mut cover: String = "".to_string();
+        for figure in document.select(&cover_figure_selector) {
             cover = match figure.value().attr("href") {
                 Some(url) => {
                     if let Some(pos) = url.find(".png") {
@@ -113,16 +114,68 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
                         url.to_string()
                     }
                 },
-                None => panic!("no cover found")
+                None => {
+                    println!("no cover found");
+                    "".to_string()
+                }
             };
         }
 
+        
+        let mut color_pages: Vec<String> = vec![];
+        let mut preview_pages: Vec<String> = vec![];
+        for figure in document.select(&color_page_figure_selector) {
+            let is_preview = match figure.value().attr("alt") {
+                Some(alt) => {
+                    if alt.ends_with("Preview") {
+                        true
+                    } else {
+                        false
+                    }
+                },
+                None => false,
+            };
+            let page = match figure.value().attr("data-src") {
+                Some(url) => {
+                    if let Some(pos) = url.find(".png") {
+                        // Extraire la sous-chaîne jusqu'à ".png" (inclus)
+                        let result = &url[..=pos + 3];
+                        result.to_string()
+                    } else {
+                        url.to_string()
+                    }
+                },
+                None => {
+                    let page = match figure.value().attr("src") {
+                        Some(url) => {
+                            if let Some(pos) = url.find(".png") {
+                                // Extraire la sous-chaîne jusqu'à ".png" (inclus)
+                                let result = &url[..=pos + 3];
+                                result.to_string()
+                            } else {
+                                url.to_string()
+                            }
+                        },
+                        None => {
+                            println!("no page found");
+                            "".to_string()
+                        }
+                    };
+                    page
+                }
+            };
+            if is_preview {
+                preview_pages.push(page)
+            } else {
+                color_pages.push(page)
+            }
+        };
+        
         let mut placements: Vec<Rank> = vec![];
         for li in document.select(&li_selector) {
             let mut is_color = false;
-            for _ in li.select(&font_color_selector).map(|x| x.inner_html()) {
+            if let Some(_) = li.select(&font_color_selector).map(|x| x.inner_html()).next() {
                 is_color = true;
-                break
             }
             if !is_color {
                 let chapters: Vec<&str> = li.children().filter_map(|node| match node.value() {
@@ -130,7 +183,7 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
                     _ => None,
                 })
                 .collect();
-                let chapter_string: String = chapters[0].chars().filter(|c| c.is_digit(10)).collect();
+                let chapter_string: String = chapters[0].chars().filter(|c| c.is_ascii_digit()).collect();
                 let chapter = match chapter_string.parse::<i16>() {
                     Ok(c) => c,
                     Err(e) => {
@@ -138,11 +191,11 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
                         0
                     }
                 };
-                for element in li.select(&a_selector).map(|x| x.inner_html()) {
+                for name in li.select(&a_selector).map(|x| x.inner_html()) {
                     let rank = Rank {
                         id: None,
-                        name: element,
-                        chapter: chapter
+                        name,
+                        chapter
                     };
                     placements.push(rank);
                 }
@@ -152,19 +205,24 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
             id: None,
             week: week_string,
             ranking: placements,
-            cover: cover,
+            cover,
+            color_pages,
+            preview_pages
         };
         rankings.push(ranking);
     }
     let data = Rankings {
         id: None,
-        year: year,
-        rankings: rankings,
+        year,
+        rankings,
     };
     let rankings_detail = db.create_rankings(data);
     match rankings_detail {
         Ok(rankings) => Ok(Json(rankings)),
-        Err(_) => Err(Status::InternalServerError),
+        Err(e) => {
+            println!("Error creating rankings: {}", e);
+            Err(Status::InternalServerError)
+        }
     }
 
 
@@ -177,17 +235,16 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
 
 async fn get_resp(week: &String, year: i32) -> Response {
     let url = format!("https://jump.fandom.com/wiki/Weekly_Shonen_Jump_Issue_{},_{}", week, year);
-    let resp = match reqwest::get(url).await {
+    match reqwest::get(url).await {
         Ok(v) => v,
         Err(e) => panic!("error while getting url on year {} and week {}: {}", year, week, e)
-    };
-    resp
+    }
 }
 
-async fn get_img_resp() -> Response {
-    let img_resp = match reqwest::get("https://static.wikia.nocookie.net/weeky-shonen-jump/images/9/92/WSJ_Issue_2022_52_Cover.png").await {
-        Ok(v) => v,
-        Err(e) => panic!("")
-    };
-    img_resp
-}
+// async fn get_img_resp() -> Response {
+//     let img_resp = match reqwest::get("https://static.wikia.nocookie.net/weeky-shonen-jump/images/9/92/WSJ_Issue_2022_52_Cover.png").await {
+//         Ok(v) => v,
+//         Err(e) => panic!("")
+//     };
+//     img_resp
+// }
