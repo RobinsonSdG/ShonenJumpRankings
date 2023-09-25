@@ -7,6 +7,7 @@ pub struct Ranking {
     pub id: Option<ObjectId>,
     pub week: String,
     pub ranking: Vec<Rank>,
+    pub newbies: Vec<Rank>,
     pub cover: String,
     pub color_pages: Vec<String>,
     pub preview_pages: Vec<String>

@@ -4,7 +4,7 @@ use dotenv::dotenv;
 
 use mongodb::{
     bson::{extjson::de::Error, doc},
-    results::InsertOneResult,
+    results::{InsertOneResult, UpdateResult},
     sync::{Client, Collection},
 };
 use crate::models::ranking_model::{Ranking, Rankings};
@@ -67,24 +67,24 @@ impl MongoRepo {
         }
     }
 
-    pub fn create_rankings(&self, new_ranking: Rankings) -> Result<InsertOneResult, mongodb::error::Error> {
+    pub fn create_rankings(&self, new_ranking: Rankings) -> Result<UpdateResult, mongodb::error::Error> {
         let new_doc = Rankings {
             id: None,
             year: new_ranking.year,
             rankings: new_ranking.rankings,
         };
+        let mut options = mongodb::options::ReplaceOptions::default();
+        options.upsert = Some(true);
+
         self
             .col
-            .insert_one(new_doc, None)
+            .replace_one(doc!{"year":new_ranking.year}, new_doc, options)
     }
 
-    pub fn get_rankings(&self, year: &i32) -> Result<Rankings, Error> {
+    pub fn get_rankings(&self, year: &i32) -> Result<Option<Rankings>, mongodb::error::Error> {
         let filter = doc! {"year": year};
-        let rankings = self
+        self
             .col
             .find_one(filter, None)
-            .ok()
-            .expect("Error getting ranking's detail");
-        Ok(rankings.unwrap())
     }
 }

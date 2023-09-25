@@ -1,7 +1,8 @@
 use crate::{models::ranking_model::{Ranking, Rankings, Rank}, repository::mongodb_repo::MongoRepo};
-use mongodb::results::InsertOneResult;
+use mongodb::results::{InsertOneResult, UpdateResult};
 use reqwest::Response;
 use rocket::{http::Status, serde::json::Json, State};
+use serde::{Serialize, Deserialize};
 
 // #[post("/ranking", data = "<new_ranking>")]
 // pub fn create_ranking(
@@ -42,13 +43,22 @@ pub fn get_ranking_for_a_title(db: &State<MongoRepo>, year: i32, week: String, t
 pub fn get_rankings(db: &State<MongoRepo>, year: i32) -> Result<Json<Rankings>, Status> {
     let ranking_detail = db.get_rankings(&year);
     match ranking_detail {
-        Ok(rankings) => Ok(Json(rankings)),
-        Err(_) => Err(Status::InternalServerError),
+        Ok(rankings) => match rankings {
+            Some(r) => Ok(Json(r)),
+            None => {
+                println!("No rankings for this year in database: {}", year);
+                Err(Status::InternalServerError)
+            }
+        }
+        Err(e) => {
+            println!("Error getting rankings: {}", e);
+            Err(Status::InternalServerError)
+        }
     }
 }
 
 #[post("/rankings/<year>")]
-pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result<Json<InsertOneResult>, Status> {
+pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result<Json<UpdateResult>, Status> {
     let mut rankings: Vec<Ranking> = vec![];
     let mut weeks = 1..53;
     while let Some(week) = weeks.next() {
@@ -171,7 +181,8 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
             }
         };
         
-        let mut placements: Vec<Rank> = vec![];
+        let mut ranking: Vec<Rank> = vec![];
+        let mut newbies: Vec<Rank> = vec![];
         for li in document.select(&li_selector) {
             let mut is_color = false;
             if let Some(_) = li.select(&font_color_selector).map(|x| x.inner_html()).next() {
@@ -197,14 +208,19 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
                         name,
                         chapter
                     };
-                    placements.push(rank);
+                    if chapter < 8 {
+                        newbies.push(rank)
+                    } else {                        
+                        ranking.push(rank);
+                    }
                 }
             }
         }
         let ranking = Ranking {
             id: None,
             week: week_string,
-            ranking: placements,
+            ranking,
+            newbies,
             cover,
             color_pages,
             preview_pages
