@@ -1,8 +1,7 @@
 use crate::{models::ranking_model::{Ranking, Rankings, Rank}, repository::mongodb_repo::MongoRepo};
-use mongodb::results::{InsertOneResult, UpdateResult};
+use mongodb::results::UpdateResult;
 use reqwest::Response;
 use rocket::{http::Status, serde::json::Json, State};
-use serde::{Serialize, Deserialize};
 
 // #[post("/ranking", data = "<new_ranking>")]
 // pub fn create_ranking(

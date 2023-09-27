@@ -3,8 +3,8 @@ extern crate dotenv;
 use dotenv::dotenv;
 
 use mongodb::{
-    bson::{extjson::de::Error, doc},
-    results::{InsertOneResult, UpdateResult},
+    bson::doc,
+    results::UpdateResult,
     sync::{Client, Collection},
 };
 use crate::models::ranking_model::{Ranking, Rankings};
