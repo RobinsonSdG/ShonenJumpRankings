@@ -8,6 +8,7 @@ pub struct Ranking {
     pub week: String,
     pub ranking: Vec<Rank>,
     pub newbies: Vec<Rank>,
+    pub absent: Vec<Rank>,
     pub cover: String,
     pub color_pages: Vec<String>,
     pub preview_pages: Vec<String>

@@ -107,6 +107,7 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
 
         let cover_figure_selector = scraper::Selector::parse("figure>a").unwrap();
         let li_selector = scraper::Selector::parse("ol>li").unwrap();
+        let absent_li_selector = scraper::Selector::parse("ul>li").unwrap();
         let font_color_selector = scraper::Selector::parse("font").unwrap();
         let a_selector = scraper::Selector::parse("a").unwrap();
         let color_page_figure_selector = scraper::Selector::parse("div>span>table>tbody>tr>td>a>img").unwrap();
@@ -179,13 +180,34 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
                 color_pages.push(page)
             }
         };
+
+        let mut absent: Vec<Rank> = vec![];
+
+        for li in document.select(&absent_li_selector) {
+            let mut is_absent = false;
+            if let Some(_) = li.select(&font_color_selector).map(|x| x.inner_html()).next() {
+                is_absent = true;
+            }
+            if is_absent {
+                for name in li.select(&a_selector).map(|x| x.inner_html()) {
+                    let rank = Rank {
+                        id: None,
+                        name,
+                        chapter: 0,
+                    };
+                    absent.push(rank);
+                }
+            }
+        }
         
         let mut ranking: Vec<Rank> = vec![];
         let mut newbies: Vec<Rank> = vec![];
         for li in document.select(&li_selector) {
             let mut is_color = false;
-            if let Some(_) = li.select(&font_color_selector).map(|x| x.inner_html()).next() {
-                is_color = true;
+            if let Some(color_type) = li.select(&font_color_selector).map(|x| x.inner_html()).next() {
+                if color_type != "(End of Serialization)" {
+                    is_color = true;
+                }
             }
             if !is_color {
                 let chapters: Vec<&str> = li.children().filter_map(|node| match node.value() {
@@ -220,6 +242,7 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
             week: week_string,
             ranking,
             newbies,
+            absent,
             cover,
             color_pages,
             preview_pages
@@ -239,13 +262,6 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
             Err(Status::InternalServerError)
         }
     }
-
-
-    // Some(Json(Rankings {
-    //     id: None,
-    //     year: year,
-    //     rankings: rankings,
-    // }))
 }
 
 async fn get_resp(week: &String, year: i32) -> Response {
@@ -255,11 +271,3 @@ async fn get_resp(week: &String, year: i32) -> Response {
         Err(e) => panic!("error while getting url on year {} and week {}: {}", year, week, e)
     }
 }
-
-// async fn get_img_resp() -> Response {
-//     let img_resp = match reqwest::get("https://static.wikia.nocookie.net/weeky-shonen-jump/images/9/92/WSJ_Issue_2022_52_Cover.png").await {
-//         Ok(v) => v,
-//         Err(e) => panic!("")
-//     };
-//     img_resp
-// }
