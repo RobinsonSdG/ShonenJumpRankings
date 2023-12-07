@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{models::ranking_model::{Ranking, Rankings, Rank}, repository::mongodb_repo::MongoRepo};
 use mongodb::results::UpdateResult;
 use reqwest::Response;
@@ -131,17 +133,20 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
             };
         }
 
-        
-        let mut color_pages: Vec<String> = vec![];
+        let mut color_pages: HashMap<String, Vec<String>> = HashMap::new();
+        // let mut color_pages: Vec<String> = vec![];
         let mut preview_pages: Vec<String> = vec![];
         for figure in document.select(&color_page_figure_selector) {
+            let mut alt = "";
             let is_preview = match figure.value().attr("alt") {
-                Some(alt) => {
-                    if alt.ends_with("Preview") {
+                Some(current_alt) => {
+                    alt = current_alt;
+                    if current_alt.ends_with("Preview") {
                         true
                     } else {
                         false
                     }
+                    
                 },
                 None => false,
             };
@@ -177,7 +182,15 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
             if is_preview {
                 preview_pages.push(page)
             } else {
-                color_pages.push(page)
+                if let Some(color_page_manga_name) = alt.split(" ch").next() {
+                    if let Some(values) = color_pages.get_mut(color_page_manga_name) {
+                        values.push(page.to_string());
+                    } else {
+                        color_pages.insert(color_page_manga_name.to_string(), vec![page]);
+                    }
+                } else {
+                    println!("String doesn't contain ' ch'");
+                }
             }
         };
 

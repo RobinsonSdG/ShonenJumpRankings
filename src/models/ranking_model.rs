@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use mongodb::bson::oid::ObjectId;
 use serde::{Serialize, Deserialize};
 
@@ -10,7 +12,7 @@ pub struct Ranking {
     pub newbies: Vec<Rank>,
     pub absent: Vec<Rank>,
     pub cover: String,
-    pub color_pages: Vec<String>,
+    pub color_pages: HashMap<String, Vec<String>>,
     pub preview_pages: Vec<String>
 }
 
