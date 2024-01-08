@@ -16,12 +16,21 @@ pub fn doc() -> &'static str {
     "Hello here is the jump ranking api!\nTo request for rankings of a year go to /rankings/<year>\nIf you want a ranking of a week go to /ranking/<year>/<week>"
 }
 
+#[get("/test")]
+pub fn test() -> &'static str {
+    "Test pour voir si c'est mongo le problème"
+}
+
 #[launch]
 fn rocket() -> _ {
     let db = MongoRepo::init();
-    rocket::build()
+    let figment = rocket::Config::figment()
+        .merge(("port", 8080))
+        .merge(("address", "0.0.0.0"));
+    rocket::custom(figment)
         .manage(db)
         .mount("/", routes![doc])
+        .mount("/", routes![test])
         .mount("/", routes![browse_and_add_rankings])
         .mount("/", routes![get_ranking])
         .mount("/", routes![get_ranking_for_a_title])
