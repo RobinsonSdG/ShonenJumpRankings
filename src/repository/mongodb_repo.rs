@@ -20,7 +20,10 @@ impl MongoRepo {
             Ok(v) => v.to_string(),
             Err(_) => panic!("Error loading env variable"),
         };
-        let client = Client::with_uri_str(uri).unwrap();
+        let client = match Client::with_uri_str(uri) { 
+            Ok(c) => c,
+            Err(_) => panic!("Error creating client"),
+        };
         let db = client.database("rustDB");
         let col: Collection<Rankings> = db.collection("Rankings");
         MongoRepo { col }
