@@ -9,6 +9,7 @@ mod repository;
 
 use api::ranking_api::{browse_and_add_rankings, get_ranking, get_rankings, get_ranking_for_a_title};
 use repository::mongodb_repo::MongoRepo;
+use reqwest::ClientBuilder;
 
 
 #[get("/")]
@@ -25,19 +26,16 @@ pub fn test() -> &'static str {
 fn rocket() -> _ {
     let db = MongoRepo::init();
 
-    // Chemin vers les fichiers du certificat et de la clé privée
-    let cert_path = "cert.pem";
-    let key_path = "key.pem";
+    let client = ClientBuilder::new().danger_accept_invalid_certs(true).build().unwrap();
 
     // Configuration TLS/SSL pour Rocket avec figment
     let figment = rocket::Config::figment()
         .merge(("port", 8080))
-        .merge(("address", "0.0.0.0"))
-        .merge(("global.tls.certificate", cert_path))
-        .merge(("global.tls.key", key_path));
+        .merge(("address", "0.0.0.0"));
 
     rocket::custom(figment)
         .manage(db)
+        .manage(client)
         .mount("/", routes![doc])
         .mount("/", routes![test])
         .mount("/", routes![browse_and_add_rankings])
