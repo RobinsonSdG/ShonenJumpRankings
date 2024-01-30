@@ -26,16 +26,16 @@ fn rocket() -> _ {
     let db = MongoRepo::init();
 
     // Chemin vers les fichiers du certificat et de la clé privée
-    let cert_path = "chemin/vers/cert.pem";
-    let key_path = "chemin/vers/key.pem";
+    let cert_path = "cert.pem";
+    let key_path = "key.pem";
 
     // Configuration TLS/SSL pour Rocket avec figment
     let figment = rocket::Config::figment()
         .merge(("port", 8080))
         .merge(("address", "0.0.0.0"))
-        .merge(("tls.certificate", cert_path))
-        .merge(("tls.key", key_path));
-        
+        .merge(("global.tls.certificate", cert_path))
+        .merge(("global.tls.key", key_path));
+
     rocket::custom(figment)
         .manage(db)
         .mount("/", routes![doc])
