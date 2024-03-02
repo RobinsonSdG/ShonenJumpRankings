@@ -279,7 +279,7 @@ pub async fn browse_and_add_rankings(db: &State<MongoRepo>, year: i32) -> Result
 
 async fn get_resp(week: &String, year: i32) -> Response {
     let url = format!("https://jump.fandom.com/wiki/Weekly_Shonen_Jump_Issue_{},_{}", week, year);
-    match reqwest::get(url).await {
+    match reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap().get(&url).send().await {
         Ok(v) => v,
         Err(e) => panic!("error while getting url on year {} and week {}: {}", year, week, e)
     }
