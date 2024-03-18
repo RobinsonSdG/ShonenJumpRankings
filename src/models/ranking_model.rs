@@ -11,8 +11,8 @@ pub struct Ranking {
     pub ranking: Vec<Rank>,
     pub newbies: Vec<Rank>,
     pub absent: Vec<Rank>,
-    pub cover: String,
-    pub color_pages: HashMap<String, Vec<String>>,
+    pub cover: Figure,
+    pub color_pages: Vec<Figure>,
     pub preview_pages: Vec<String>
 }
 
@@ -22,6 +22,14 @@ pub struct Rank {
     pub id: Option<ObjectId>,
     pub name: String,
     pub chapter: i16
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Figure {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub imgs: Vec<String>,
+    pub rank: Rank
 }
 
 #[derive(Debug, Serialize, Deserialize)]
