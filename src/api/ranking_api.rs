@@ -251,6 +251,7 @@ pub async fn browse_and_add_rankings(
             {
                 if color_type == "(Lead Color Page)" {
                     is_cover = true;
+                    is_color = true
                 } else if color_type != "(End of Serialization)" {
                     is_color = true;
                 }
@@ -277,25 +278,43 @@ pub async fn browse_and_add_rankings(
                     name: name.clone(),
                     chapter,
                 };
-                if is_cover {
-                    cover = Figure {
-                        id: None,
-                        rank,
-                        imgs: vec![cover_image.to_string()],
+                if is_color {
+                    let imgs = match color_pages_map.remove(&name) {
+                        Some(i) => i.to_vec(),
+                        None => vec![],
                     };
-                } else if is_color {
                     let color_page = Figure {
                         id: None,
-                        rank,
-                        imgs: color_pages_map.get(&name).unwrap().to_vec(),
+                        rank: rank.clone(),
+                        imgs,
                     };
-                    color_pages.push(color_page)
+                    color_pages.push(color_page);
+                    if is_cover {
+                        cover = Figure {
+                            id: None,
+                            rank: rank.clone(),
+                            imgs: vec![cover_image.to_string()],
+                        };
+                    }
                 } else if chapter < 8 {
                     newbies.push(rank)
                 } else {
                     ranking.push(rank);
                 }
-            }
+            };
+        }
+        for (name, imgs) in color_pages_map  {
+            let rank = Rank {
+                id: None,
+                name,
+                chapter: 0,
+            };
+            let color_page = Figure {
+                id: None,
+                rank: rank.clone(),
+                imgs,
+            };
+            color_pages.push(color_page);
         }
         let ranking = Ranking {
             id: None,
