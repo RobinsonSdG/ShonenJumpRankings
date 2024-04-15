@@ -244,15 +244,13 @@ pub async fn browse_and_add_rankings(
         for li in document.select(&li_selector) {
             let mut is_color = false;
             let mut is_cover = false;
-            if let Some(color_type) = li
-                .select(&font_color_selector)
-                .map(|x| x.inner_html())
-                .next()
+            let mut it = li.select(&font_color_selector).map(|x| x.inner_html());
+            while let Some(color_type) = it.next()
             {
-                if color_type == "(Lead Color Page)" {
+                if color_type.contains("(Lead Color Page)") {
                     is_cover = true;
                     is_color = true
-                } else if color_type != "(End of Serialization)" {
+                } else if !color_type.contains("(End of Serialization)") && !color_type.contains("(Serialization Resumed)") {
                     is_color = true;
                 }
             }
