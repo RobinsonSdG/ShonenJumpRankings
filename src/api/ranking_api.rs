@@ -250,7 +250,7 @@ pub async fn browse_and_add_rankings(
                 if color_type.contains("(Lead Color Page)") {
                     is_cover = true;
                     is_color = true
-                } else if !color_type.contains("(End of Serialization)") && !color_type.contains("(Serialization Resumed)") {
+                } else if !color_type.contains("(End of Serialization)") && !color_type.contains("(Serialization Resumed)") && !color_type.contains("(Irregular)") {
                     is_color = true;
                 }
             }
