@@ -294,7 +294,7 @@ pub async fn browse_and_add_rankings(
                             imgs: vec![cover_image.to_string()],
                         };
                     }
-                } else if chapter < 8 {
+                } else if chapter < 8 && chapter > 0 {
                     newbies.push(rank)
                 } else {
                     ranking.push(rank);
