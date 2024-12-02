@@ -294,6 +294,8 @@ pub async fn browse_and_add_rankings(
                             imgs: vec![cover_image.to_string()],
                         };
                     }
+                } else if name.starts_with("Hunter") {
+                    continue
                 } else if chapter < 8 && chapter > 0 {
                     newbies.push(rank)
                 } else {
