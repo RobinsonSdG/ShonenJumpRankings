@@ -133,7 +133,7 @@ pub async fn browse_and_add_rankings(
         let font_color_selector = scraper::Selector::parse("font").unwrap();
         let a_selector = scraper::Selector::parse("a").unwrap();
         let color_page_figure_selector =
-            scraper::Selector::parse("div>span>table>tbody>tr>td>a>img").unwrap();
+            scraper::Selector::parse("div>span>table>tbody>tr>td>span>a>img").unwrap();
 
         let mut cover_image = "";
         for figure in document.select(&cover_figure_selector) {
