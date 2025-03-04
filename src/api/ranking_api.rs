@@ -170,7 +170,7 @@ pub async fn browse_and_add_rankings(
                 }
                 None => false,
             };
-            let page = match figure.value().attr("src") {
+            let page = match figure.value().attr("data-src") {
                 Some(url) => {
                     if let Some(pos) = url.find(".png") {
                         // Extraire la sous-chaîne jusqu'à ".png" (inclus)
