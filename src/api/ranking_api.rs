@@ -158,11 +158,11 @@ pub async fn browse_and_add_rankings(
         // let mut color_pages_map: Vec<String> = vec![];
         let mut preview_pages: Vec<String> = vec![];
         for figure in document.select(&color_page_figure_selector) {
-            let mut alt = "";
-            let is_preview = match figure.value().attr("alt") {
-                Some(current_alt) => {
-                    alt = current_alt;
-                    if current_alt.ends_with("Preview") {
+            let mut image_name = "";
+            let is_preview = match figure.value().attr("data-image-name") {
+                Some(current_image_name) => {
+                    image_name = current_image_name;
+                    if current_image_name.ends_with("Preview") {
                         true
                     } else {
                         false
@@ -202,7 +202,7 @@ pub async fn browse_and_add_rankings(
             if is_preview {
                 preview_pages.push(page)
             } else {
-                if let Some(color_page_manga_name) = alt.split(" ch").next() {
+                if let Some(color_page_manga_name) = image_name.split(" ch").next() {
                     if let Some(values) = color_pages_map.get_mut(color_page_manga_name) {
                         values.push(page.to_string());
                     } else {
